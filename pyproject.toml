@@ -1,11 +1,15 @@
 [tool.poetry]
-name = "gravity-game"
-description = ""
+name = "pygame-rocket"
+
+description = "A simple rocket simulator in Python"
+
 version = "0.1.0"
+
 authors = ["Kaj Siebert <kaj@k-si.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "gravity_game"}]
+
+packages = [{include = "pygame_rocket"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -18,3 +22,6 @@ isort = "^5.13.2"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+rocket = "pygame_rocket.__main__:main"
