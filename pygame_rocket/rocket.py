@@ -69,17 +69,16 @@ class Rocket(pygame.sprite.Sprite):
         v = self.velocity.length()
 
         if self.auto_pilot and v > 1e-6:
-            aoa = self.velocity.angle_to(self.heading)
+            aoa = self.velocity.angle_to(self.heading) % 360
 
             # Only rotate if we have a chance of straightening out
             if v < 0.5 or abs(aoa) <= 180:
-                if aoa < -1:
-                    self.rotate(2)
-                elif aoa > 1:
+                if aoa < 180:
                     self.rotate(-2)
+                else:
+                    self.rotate(2)
 
-            angle_fuzziness = max(90 * min(0.5, v), 5)
-            if abs(aoa) < angle_fuzziness:
+            if aoa < 45 or aoa > 315:
                 thrust_vector = self.velocity.normalize() * 0.01
 
                 # heading is a unit vector, so the projection is the dot product 
