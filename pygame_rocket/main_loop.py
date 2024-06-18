@@ -28,6 +28,7 @@ planet = Planet(
 )
 
 all_sprites = pygame.sprite.Group([planet, rocket])
+rocket.particle_group = all_sprites
 
 # Game loop
 def main():
