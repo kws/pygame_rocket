@@ -52,7 +52,11 @@ class Rocket(pygame.sprite.Sprite):
        self.particle_group = particle_group
        self.auto_pilot = False
 
-       self._original_image = pygame.image.load(image_path).convert_alpha()
+       self.set_image(image_path)
+
+    def set_image(self, image_path):
+        self._original_image = pygame.image.load(image_path).convert_alpha()
+        self.image = None
 
     @property
     def heading(self):
@@ -114,7 +118,7 @@ class Rocket(pygame.sprite.Sprite):
     def fire(self, thrust=0.01):
         heading = self.heading
         thrust_vector = -heading * thrust
-        nozzle_vector = heading * self.rect.height / 2
+        nozzle_vector = heading * self.rect.width / 2
 
         nozzle_position = self.rect.center + nozzle_vector
         if self.particle_group:

@@ -23,14 +23,9 @@ def draw_text(surface, text, pos, colour="white"):
 
 cx, cy = WIDTH // 2, HEIGHT // 2
 
-
-rocket = Rocket((cx, cy - 100), image_path=sprites.ship_2)
-planet = Planet(
-    pos=pygame.Vector2(cx, cy),
-    mass=1e24, 
-    radius=20, 
-    colour="lawngreen" 
-)
+all_rocket_images = [sprites.ship_1, sprites.ship_2, sprites.ship_3]
+rocket = Rocket((cx, cy - 100), image_path=all_rocket_images[-1])
+planet = Planet((cx, cy))
 
 all_sprites = pygame.sprite.Group([planet, rocket])
 rocket.particle_group = all_sprites
@@ -44,6 +39,11 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_s:
+                current_image = all_rocket_images.pop(0)
+                all_rocket_images.append(current_image)
+                rocket.set_image(current_image)
+
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
@@ -57,7 +57,7 @@ def main():
             rocket.auto_pilot = False
         if keys[pygame.K_h]:
             rocket.auto_pilot = True
-
+ 
         if keys[pygame.K_q]:
             running = False
 
