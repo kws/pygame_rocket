@@ -11,6 +11,7 @@ class Particle(pygame.sprite.Sprite):
         super().__init__()
 
         self.velocity = velocity
+        self.color = pygame.Color("red")
 
         self.image = pygame.Surface([3, 3], pygame.SRCALPHA)
         self.image = self.image.convert_alpha()
@@ -28,6 +29,12 @@ class Particle(pygame.sprite.Sprite):
             self.kill()
         else:
             self.rect.center = self.rect.center + self.velocity * dt
+            h, s, v, a = self.color.hsva
+            h += random.randrange(-10, 10)
+            self.color.hsva = (h % 360, s, v, a)
+            self.image.fill((0, 0, 0, 255))
+            pygame.draw.circle(self.image, self.color, (1, 1), 3, 2)
+
 
 
 
@@ -117,14 +124,25 @@ class Rocket(pygame.sprite.Sprite):
     def fire(self, thrust=0.01):
         heading = self.heading
         thrust_vector = -heading * thrust
-        nozzle_vector = heading * self.rect.width / 2
+        nozzle_vector = heading * self.rect.width * 0.65
 
-        nozzle_position = self.rect.center + nozzle_vector
         if self.particle_group:
-            self.particle_group.add(Particle(
-                nozzle_position,
-                self.velocity - thrust_vector * 3,
-            ))
+            for _ in range(25):
+                if random.random() > thrust*100 :
+                    continue
+
+                nozzle_position = pygame.math.Vector2(self.rect.center)
+                nozzle_position.x += random.randint(-3, 3)
+                nozzle_position += nozzle_vector
+
+                rotation = random.random() * 20 - 10   
+                particle_heading = heading.rotate(rotation)
+                particle_velocity = particle_heading * (0.1 + random.random() * 0.2)
+
+                self.particle_group.add(Particle(
+                    nozzle_position,
+                    self.velocity + particle_velocity
+                ))
 
         self.velocity += thrust_vector
 
