@@ -7,4 +7,6 @@ ship_1 = SPRITE_ROOT / "ship-1.png"
 ship_2 = SPRITE_ROOT / "ship-2.png"
 ship_3 = SPRITE_ROOT / "ship-3.png"
 
-__all__ = ["ship_1", "ship_2", "ship_3"]
+planet_1 = SPRITE_ROOT / "planet-1.png"
+
+__all__ = ["ship_1", "ship_2", "ship_3", "planet_1"]
