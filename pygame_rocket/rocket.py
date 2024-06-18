@@ -1,4 +1,5 @@
 import random
+from typing import Literal
 import pygame
 from .sprites import ship_1
 
@@ -27,13 +28,14 @@ class Particle(pygame.sprite.Sprite):
         self.age += dt
         if self.age > self.life_span:
             self.kill()
-        else:
-            self.rect.center = self.rect.center + self.velocity * dt
-            h, s, v, a = self.color.hsva
-            h += random.randrange(-10, 10)
-            self.color.hsva = (h % 360, s, v, a)
-            self.image.fill((0, 0, 0, 255))
-            pygame.draw.circle(self.image, self.color, (1, 1), 3, 2)
+            return
+        
+        self.rect.center = self.rect.center + self.velocity * dt
+        h, s, v, a = self.color.hsva
+        h += random.randrange(-10, 10)
+        self.color.hsva = (h % 360, s, v, a)
+        self.image.fill((0, 0, 0, 255))
+        pygame.draw.circle(self.image, self.color, (1, 1), 3, 2)
 
 
 
@@ -46,6 +48,7 @@ class Rocket(pygame.sprite.Sprite):
             direction: float = 0, 
             image_path = ship_1,
             particle_group = None,
+            mode: Literal["bounce", "wrap"] = "bounce"
         ):
        
        # Call the parent class (Sprite) constructor
@@ -58,6 +61,7 @@ class Rocket(pygame.sprite.Sprite):
        self.image = None
        self.particle_group = particle_group
        self.auto_pilot = False
+       self.mode = mode
 
        self.set_image(image_path)
 
@@ -70,16 +74,82 @@ class Rocket(pygame.sprite.Sprite):
         return pygame.math.Vector2(0,1).rotate(self._direction)
 
 
-    def update(self, *args, dt=0, screen_dimensions=None, **kwargs):
+    def update(self, *args, dt=0, screen_dimensions=None, gravity_sprites=None, **kwargs):
         assert screen_dimensions, "screen_dimensions is required"
 
+        # Bounce off the walls
+        if self.mode == "bounce":
+            self.check_bounce(screen_dimensions)
+        elif self.mode == "wrap":
+            self.check_wrap(screen_dimensions)
+
+        # Add a velocity component from gravity
+        if gravity_sprites:
+            for x, y, mass in gravity_sprites.all_com:
+                gravity_vector = pygame.math.Vector2(x, y) - self.pos
+                gravity_vector = gravity_vector.normalize() * mass / gravity_vector.length_squared()
+                gravity_vector = gravity_vector * dt * 0.01
+                if gravity_vector.length() > 1:
+                    gravity_vector = gravity_vector.normalize()
+                self.velocity += gravity_vector
+
+        if self.auto_pilot:
+            self.auto_pilot_update()
+
+        self.pos += self.velocity * dt
+
+        if self.image is None:
+            self.image = pygame.transform.rotate(self._original_image, -self._direction)
+            self.rect = self.image.get_rect()
+
+        self.rect.center = self.pos
+
+    def check_bounce(self, screen_dimensions):
+        screen_x_min, screen_y_min, screen_x_max, screen_y_max = screen_dimensions
+
+        if self.pos.y < screen_y_min:
+            self.pos.y = screen_y_min
+            self.velocity.y = abs(self.velocity.y)
+        elif self.pos.y > screen_y_max:
+            self.pos.y = screen_y_max
+            self.velocity.y = -abs(self.velocity.y)
+            
+        if self.pos.x < screen_x_min:
+            self.pos.x = screen_x_min
+            self.velocity.x = abs(self.velocity.x)
+        elif self.pos.x > screen_x_max:
+            self.pos.x = screen_x_max
+            self.velocity.x = -abs(self.velocity.x)
+
+    def check_wrap(self, screen_dimensions):
+        screen_x_min, screen_y_min, screen_x_max, screen_y_max = screen_dimensions
+
+        if self.pos.y < screen_y_min:
+            self.pos.y = screen_y_max
+        elif self.pos.y > screen_y_max:
+            self.pos.y = screen_y_min
+            
+        if self.pos.x < screen_x_min:
+            self.pos.x = screen_x_max
+        elif self.pos.x > screen_x_max:
+            self.pos.x = screen_x_min
+
+    def auto_pilot_update(self):
+        """
+        The autopilot will attempt to keep the rocket stationary. 
+
+        It will rotate the rocket to face the direction of travel, and then thrust in that direction.
+
+        If the rocket is moving too fast so it won't have time to turn before hitting the edge of the screen,
+        it will not rotate and instead wait for a more favourable time.
+        """
         v = self.velocity.length()
 
-        if self.auto_pilot and v > 1e-6:
+        if v > 1e-6: # Only run if enabled and we're moving
             aoa = self.velocity.angle_to(self.heading) % 360
 
             # Only rotate if we have a chance of straightening out
-            if v < 0.5 or abs(aoa) <= 180:
+            if self.mode == "wrap" or (v < 0.5 or abs(aoa) <= 180):
                 if aoa < 180:
                     self.rotate(-2)
                 else:
@@ -96,26 +166,6 @@ class Rocket(pygame.sprite.Sprite):
                 thrust_dimension = min(v/25, thrust_dimension)
 
                 self.fire(thrust=thrust_dimension)
-
-        screen_x_min, screen_y_min, screen_x_max, screen_y_max = screen_dimensions
-
-        if self.pos.y < screen_y_min:
-            self.velocity.y = abs(self.velocity.y)
-        elif self.pos.y > screen_y_max:
-            self.velocity.y = -abs(self.velocity.y)
-
-        if self.pos.x < screen_x_min:
-            self.velocity.x = abs(self.velocity.x)
-        elif self.pos.x > screen_x_max:
-            self.velocity.x = -abs(self.velocity.x)
-
-        self.pos += self.velocity * dt
-
-        if self.image is None:
-            self.image = pygame.transform.rotate(self._original_image, -self._direction)
-            self.rect = self.image.get_rect()
-
-        self.rect.center = self.pos
 
     def rotate(self, degrees):
         self._direction += degrees

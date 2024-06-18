@@ -2,6 +2,7 @@ import sys
 import pygame
 from .planet import Planet
 from .rocket import Rocket
+from .gravity import GravityGroup
 from . import sprites
 
 WIDTH = 800
@@ -24,11 +25,16 @@ def draw_text(surface, text, pos, colour="white"):
 cx, cy = WIDTH // 2, HEIGHT // 2
 
 all_rocket_images = [sprites.ship_1, sprites.ship_2, sprites.ship_3]
-rocket = Rocket((cx, cy - 100), image_path=all_rocket_images[-1])
-planet = Planet((cx, cy))
 
-all_sprites = pygame.sprite.Group([planet, rocket])
-rocket.particle_group = all_sprites
+# We create a smaller group for gravity so we don't have to loop over all the massless particles
+gravity_sprites = GravityGroup()
+gravity_sprites.add(Planet((cx-100, cy), mass=100))
+gravity_sprites.add(Planet((cx+100, cy), mass=100, image_path=sprites.planet_2))
+
+all_sprites = pygame.sprite.Group(gravity_sprites)
+rocket = Rocket((cx, cy - 100), image_path=all_rocket_images[-1], particle_group=all_sprites, mode="wrap")
+all_sprites.add(rocket)
+
 
 # Game loop
 def main():
@@ -61,7 +67,7 @@ def main():
         if keys[pygame.K_q]:
             running = False
 
-        all_sprites.update(dt=dt, screen_dimensions=(0, 0, WIDTH, HEIGHT))
+        all_sprites.update(dt=dt, screen_dimensions=(0, 0, WIDTH, HEIGHT), gravity_sprites=gravity_sprites)
 
         screen.fill((0,0,0))
         all_sprites.draw(screen) 
