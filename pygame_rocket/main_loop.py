@@ -14,7 +14,12 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Rocket Simulator")
 clock = pygame.time.Clock()
 
-text_font = pygame.font.Font(None, 12)  
+text_font = pygame.font.Font(None, 24)
+
+def draw_text(surface, text, pos, colour="white"):
+    text = text_font.render(text, True, colour)
+    surface.blit(text, pos)
+
 
 cx, cy = WIDTH // 2, HEIGHT // 2
 
@@ -42,11 +47,16 @@ def main():
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
-            rocket.rotate(2)
-        if keys[pygame.K_RIGHT]:
             rocket.rotate(-2)
+            rocket.auto_pilot = False
+        if keys[pygame.K_RIGHT]:
+            rocket.rotate(2)
+            rocket.auto_pilot = False
         if keys[pygame.K_SPACE]:
             rocket.fire()
+            rocket.auto_pilot = False
+        if keys[pygame.K_h]:
+            rocket.auto_pilot = True
 
         if keys[pygame.K_q]:
             running = False
@@ -55,6 +65,10 @@ def main():
 
         screen.fill((0,0,0))
         all_sprites.draw(screen) 
+        draw_text(screen, f"Velocity: {rocket.velocity.magnitude()*1_000:.0f}", (10, 10))
+        draw_text(screen, f"Heading: {rocket._direction%360:.0f}", (10, 30))
+        if rocket.auto_pilot:
+            draw_text(screen, "Auto Pilot", (700, 10), "red")
 
         pygame.display.flip()
         dt = clock.tick(FPS)
