@@ -3,6 +3,7 @@ import pygame
 from .planet import Planet
 from .rocket import Rocket
 from .gravity import GravityGroup
+from .geometry import boundary_intersection
 from . import sprites
 
 WIDTH = 800
@@ -32,9 +33,10 @@ gravity_sprites.add(Planet((cx-100, cy), mass=100))
 gravity_sprites.add(Planet((cx+100, cy), mass=100, image_path=sprites.planet_2))
 
 all_sprites = pygame.sprite.Group(gravity_sprites)
-rocket = Rocket((cx, cy - 100), image_path=all_rocket_images[-1], particle_group=all_sprites, mode="wrap")
+rocket = Rocket((cx, cy - 100), image_path=all_rocket_images[-1], particle_group=all_sprites, mode="infinite")
 all_sprites.add(rocket)
 
+screen_bounds = pygame.Rect(0, 0, WIDTH, HEIGHT)
 
 # Game loop
 def main():
@@ -49,6 +51,11 @@ def main():
                 current_image = all_rocket_images.pop(0)
                 all_rocket_images.append(current_image)
                 rocket.set_image(current_image)
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                rocket.pos = pygame.math.Vector2(cx, cy - 100)
+                rocket.velocity = pygame.math.Vector2(0, 0)
+                rocket.direction = 0
+                rocket.auto_pilot = False
 
 
         keys = pygame.key.get_pressed()
@@ -75,6 +82,16 @@ def main():
         draw_text(screen, f"Heading: {rocket._direction%360:.0f}", (10, 30))
         if rocket.auto_pilot:
             draw_text(screen, "Auto Pilot", (700, 10), "red")
+
+        if not screen_bounds.collidepoint(rocket.pos):
+            intersect = boundary_intersection(screen_bounds, rocket.pos)
+            if intersect:
+                pos2 = pygame.math.Vector2(intersect).move_towards((cx, cy), 50)
+                pygame.draw.line(screen, "grey", intersect, pos2, 2)
+
+                distance = rocket.pos.distance_to(intersect)
+                draw_text(screen, f"Dist {distance}", pos2, "grey")
+
 
         pygame.display.flip()
         dt = clock.tick(FPS)

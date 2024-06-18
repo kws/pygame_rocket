@@ -48,7 +48,7 @@ class Rocket(pygame.sprite.Sprite):
             direction: float = 0, 
             image_path = ship_1,
             particle_group = None,
-            mode: Literal["bounce", "wrap"] = "bounce"
+            mode: Literal["bounce", "wrap", "infinite"] = "bounce"
         ):
        
        # Call the parent class (Sprite) constructor
@@ -67,6 +67,15 @@ class Rocket(pygame.sprite.Sprite):
 
     def set_image(self, image_path):
         self._original_image = pygame.image.load(image_path).convert_alpha()
+        self.image = None
+
+    @property
+    def direction(self):
+        return self._direction
+    
+    @direction.setter
+    def direction(self, value):
+        self._direction = value
         self.image = None
 
     @property
